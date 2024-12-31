@@ -192,6 +192,7 @@
             // تحقق من حركة البيدق
             if (currentPiece.toLowerCase() === 'p') {
                 const direction = currentPiece === 'P' ? -1 : 1; // الأبيض يتحرك لأعلى والأسود لأسفل
+                // البيدق يتحرك مربعًا واحدًا للأمام فقط
                 if (toRow === fromRow + direction && toCol === fromCol && targetPiece === '') {
                     return true;
                 }
