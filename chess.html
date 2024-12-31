@@ -186,7 +186,14 @@
         }
 
         function isValidMove(fromRow, fromCol, toRow, toCol) {
-            return true; // للحفاظ على بساطة الكود
+            const targetPiece = initialBoard[toRow][toCol];
+            const currentPiece = initialBoard[fromRow][fromCol];
+
+            // Example: Pieces can move if the target square is empty or contains an opponent's piece.
+            if (targetPiece === '' || (currentPlayer === 'white' && targetPiece === targetPiece.toLowerCase()) || (currentPlayer === 'black' && targetPiece === targetPiece.toUpperCase())) {
+                return true;
+            }
+            return false;
         }
 
         function movePiece(fromRow, fromCol, toRow, toCol) {
