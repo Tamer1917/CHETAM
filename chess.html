@@ -34,38 +34,15 @@
             margin-top: 20px;
             font-size: 20px;
         }
-        .timer-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        .timer {
-            font-size: 18px;
-            margin: 0 10px;
-            padding: 5px 10px;
-            border: 2px solid #000;
-            border-radius: 5px;
-            min-width: 100px;
-            text-align: center;
-            color: white;
-            background-color: #333;
-        }
     </style>
 </head>
 <body>
     <div class="turn-indicator" id="turnIndicator">دور اللاعب: الأبيض</div>
-    <div class="timer-container">
-        <div class="timer" id="whiteTimer">الوقت الأبيض: 40</div>
-        <div class="timer" id="blackTimer">الوقت الأسود: 40</div>
-    </div>
     <div class="board" id="board"></div>
 
     <script>
         const board = document.getElementById('board');
         const turnIndicator = document.getElementById('turnIndicator');
-        const whiteTimerElement = document.getElementById('whiteTimer');
-        const blackTimerElement = document.getElementById('blackTimer');
         const initialBoard = [
             ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -84,9 +61,6 @@
 
         let currentPlayer = 'white';
         let selectedSquare = null;
-        let whiteTimeLeft = 40;
-        let blackTimeLeft = 40;
-        let timer;
 
         function createBoard() {
             for (let row = 0; row < 8; row++) {
@@ -105,44 +79,9 @@
                     }
 
                     square.addEventListener('click', () => onSquareClick(row, col));
-                    square.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        onSquareClick(row, col);
-                    });
                     board.appendChild(square);
                 }
             }
-        }
-
-        function startTimer() {
-            timer = setInterval(() => {
-                if (currentPlayer === 'white') {
-                    whiteTimeLeft--;
-                    whiteTimerElement.textContent = `الوقت الأبيض: ${whiteTimeLeft}`;
-                    if (whiteTimeLeft <= 0) {
-                        stopTimer();
-                        changeTurn();
-                    }
-                } else {
-                    blackTimeLeft--;
-                    blackTimerElement.textContent = `الوقت الأسود: ${blackTimeLeft}`;
-                    if (blackTimeLeft <= 0) {
-                        stopTimer();
-                        changeTurn();
-                    }
-                }
-            }, 1000);
-        }
-
-        function stopTimer() {
-            clearInterval(timer);
-        }
-
-        function resetTimers() {
-            whiteTimeLeft = 40;
-            blackTimeLeft = 40;
-            whiteTimerElement.textContent = `الوقت الأبيض: 40`;
-            blackTimerElement.textContent = `الوقت الأسود: 40`;
         }
 
         function onSquareClick(row, col) {
@@ -186,23 +125,115 @@
         }
 
         function isValidMove(fromRow, fromCol, toRow, toCol) {
-            const targetPiece = initialBoard[toRow][toCol];
             const currentPiece = initialBoard[fromRow][fromCol];
+            const targetPiece = initialBoard[toRow][toCol];
 
             // تحقق من حركة البيدق
             if (currentPiece.toLowerCase() === 'p') {
-                const direction = currentPiece === 'P' ? -1 : 1; // الأبيض يتحرك لأعلى والأسود لأسفل
-                // البيدق يتحرك مربعًا واحدًا للأمام فقط
+                const direction = currentPiece === 'P' ? -1 : 1;
                 if (toRow === fromRow + direction && toCol === fromCol && targetPiece === '') {
                     return true;
                 }
                 return false;
             }
 
-            // مثال: قطع أخرى يمكنها التحرك إذا كانت المربع المستهدف فارغًا أو يحتوي على قطعة الخصم
-            if (targetPiece === '' || (currentPlayer === 'white' && targetPiece === targetPiece.toLowerCase()) || (currentPlayer === 'black' && targetPiece === targetPiece.toUpperCase())) {
-                return true;
+            // تحقق من حركة الرخ
+            if (currentPiece.toLowerCase() === 'r') {
+                if (fromRow === toRow) {
+                    const step = toCol > fromCol ? 1 : -1;
+                    for (let col = fromCol + step; col !== toCol; col += step) {
+                        if (initialBoard[fromRow][col] !== '') return false;
+                    }
+                } else if (fromCol === toCol) {
+                    const step = toRow > fromRow ? 1 : -1;
+                    for (let row = fromRow + step; row !== toRow; row += step) {
+                        if (initialBoard[row][fromCol] !== '') return false;
+                    }
+                } else {
+                    return false;
+                }
+                return targetPiece === '' || isOpponentPiece(targetPiece);
             }
+
+            // تحقق من حركة الحصان
+            if (currentPiece.toLowerCase() === 'n') {
+                const rowDiff = Math.abs(fromRow - toRow);
+                const colDiff = Math.abs(fromCol - toCol);
+                if ((rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2)) {
+                    return targetPiece === '' || isOpponentPiece(targetPiece);
+                }
+                return false;
+            }
+
+            // تحقق من حركة الفيل
+            if (currentPiece.toLowerCase() === 'b') {
+                const rowDiff = Math.abs(fromRow - toRow);
+                const colDiff = Math.abs(fromCol - toCol);
+                if (rowDiff === colDiff) {
+                    const rowStep = toRow > fromRow ? 1 : -1;
+                    const colStep = toCol > fromCol ? 1 : -1;
+                    for (let i = 1; i < rowDiff; i++) {
+                        if (initialBoard[fromRow + i * rowStep][fromCol + i * colStep] !== '') {
+                            return false;
+                        }
+                    }
+                    return targetPiece === '' || isOpponentPiece(targetPiece);
+                }
+                return false;
+            }
+
+            // تحقق من حركة الملكة
+            if (currentPiece.toLowerCase() === 'q') {
+                const rowDiff = Math.abs(fromRow - toRow);
+                const colDiff = Math.abs(fromCol - toCol);
+
+                // حركة قطريّة (مثل الفيل)
+                if (rowDiff === colDiff) {
+                    const rowStep = toRow > fromRow ? 1 : -1;
+                    const colStep = toCol > fromCol ? 1 : -1;
+                    for (let i = 1; i < rowDiff; i++) {
+                        if (initialBoard[fromRow + i * rowStep][fromCol + i * colStep] !== '') {
+                            return false;
+                        }
+                    }
+                    return targetPiece === '' || isOpponentPiece(targetPiece);
+                }
+
+                // حركة أفقيّة أو عموديّة (مثل الرخ)
+                if (fromRow === toRow || fromCol === toCol) {
+                    if (fromRow === toRow) {
+                        const step = toCol > fromCol ? 1 : -1;
+                        for (let col = fromCol + step; col !== toCol; col += step) {
+                            if (initialBoard[fromRow][col] !== '') return false;
+                        }
+                    } else if (fromCol === toCol) {
+                        const step = toRow > fromRow ? 1 : -1;
+                        for (let row = fromRow + step; row !== toRow; row += step) {
+                            if (initialBoard[row][fromCol] !== '') return false;
+                        }
+                    }
+                    return targetPiece === '' || isOpponentPiece(targetPiece);
+                }
+
+                return false;
+            }
+
+            // تحقق من حركة الملك
+            if (currentPiece.toLowerCase() === 'k') {
+                const rowDiff = Math.abs(fromRow - toRow);
+                const colDiff = Math.abs(fromCol - toCol);
+                if (rowDiff <= 1 && colDiff <= 1) {
+                    return targetPiece === '' || isOpponentPiece(targetPiece);
+                }
+                return false;
+            }
+
+            return false;
+        }
+
+        function isOpponentPiece(piece) {
+            if (currentPlayer === 'white' && piece === piece.toLowerCase()) return true;
+            if (currentPlayer === 'black' && piece === piece.toUpperCase()) return true;
             return false;
         }
 
@@ -216,9 +247,6 @@
         function changeTurn() {
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
             turnIndicator.textContent = `دور اللاعب: ${currentPlayer === 'white' ? 'الأبيض' : 'الأسود'}`;
-            resetTimers();
-            stopTimer();
-            startTimer();
         }
 
         function renderBoard() {
@@ -238,7 +266,6 @@
         }
 
         createBoard();
-        startTimer();
     </script>
 </body>
 </html>
