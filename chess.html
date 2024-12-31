@@ -189,7 +189,16 @@
             const targetPiece = initialBoard[toRow][toCol];
             const currentPiece = initialBoard[fromRow][fromCol];
 
-            // Example: Pieces can move if the target square is empty or contains an opponent's piece.
+            // تحقق من حركة البيدق
+            if (currentPiece.toLowerCase() === 'p') {
+                const direction = currentPiece === 'P' ? -1 : 1; // الأبيض يتحرك لأعلى والأسود لأسفل
+                if (toRow === fromRow + direction && toCol === fromCol && targetPiece === '') {
+                    return true;
+                }
+                return false;
+            }
+
+            // مثال: قطع أخرى يمكنها التحرك إذا كانت المربع المستهدف فارغًا أو يحتوي على قطعة الخصم
             if (targetPiece === '' || (currentPlayer === 'white' && targetPiece === targetPiece.toLowerCase()) || (currentPlayer === 'black' && targetPiece === targetPiece.toUpperCase())) {
                 return true;
             }
